@@ -22,11 +22,11 @@ contract Token is IERC20, IMintableToken, IDividends {
    // Additional state variables
   mapping(address => mapping(address => uint256)) private _allowances;
   
-  // Token holder tracking
+  // holders tracking
   address[] private _holders;
   mapping(address => uint256) private _holderIndex; 
   
-  // Dividend tracking
+  // tracking dividends
   mapping(address => uint256) private _withdrawableDividends;
 
    // Helper function to add a holder if not already in the list
@@ -41,7 +41,7 @@ contract Token is IERC20, IMintableToken, IDividends {
   function _removeHolder(address holder) private {
     uint256 index = _holderIndex[holder];
     if (index > 0) {
-      // Remove by swapping with last element
+
       uint256 lastIndex = _holders.length;
       if (index != lastIndex) {
         address lastHolder = _holders[lastIndex - 1];
@@ -104,7 +104,6 @@ contract Token is IERC20, IMintableToken, IDividends {
     balanceOf[msg.sender] = balanceOf[msg.sender].add(msg.value);
     totalSupply = totalSupply.add(msg.value);
     
-    // Add to holder list
     _addHolder(msg.sender);
   }
 
@@ -115,10 +114,8 @@ contract Token is IERC20, IMintableToken, IDividends {
     balanceOf[msg.sender] = 0;
     totalSupply = totalSupply.sub(balance);
     
-    // Remove from holder list
     _removeHolder(msg.sender);
     
-    // Send ETH to destination
     dest.transfer(balance);
   }
 
