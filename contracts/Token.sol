@@ -36,32 +36,90 @@ contract Token is IERC20, IMintableToken, IDividends {
       _holderIndex[holder] = _holders.length;
     }
   }
+
+  // Helper function to remove a holder from the list
+  function _removeHolder(address holder) private {
+    uint256 index = _holderIndex[holder];
+    if (index > 0) {
+      // Remove by swapping with last element
+      uint256 lastIndex = _holders.length;
+      if (index != lastIndex) {
+        address lastHolder = _holders[lastIndex - 1];
+        _holders[index - 1] = lastHolder;
+        _holderIndex[lastHolder] = index;
+      }
+      _holders.pop();
+      _holderIndex[holder] = 0;
+    }
+  }
+
   // IERC20
 
   function allowance(address owner, address spender) external view override returns (uint256) {
-    revert();
+    return _allowances[owner][spender];
   }
 
   function transfer(address to, uint256 value) external override returns (bool) {
-    revert();
+    _transfer(msg.sender, to, value);
+    return true;
   }
 
   function approve(address spender, uint256 value) external override returns (bool) {
-    revert();
+    _allowances[msg.sender][spender] = value;
+    return true;
   }
 
   function transferFrom(address from, address to, uint256 value) external override returns (bool) {
-    revert();
+    require(_allowances[from][msg.sender] >= value, "Insufficient allowance");
+    _allowances[from][msg.sender] = _allowances[from][msg.sender].sub(value);
+    _transfer(from, to, value);
+    return true;
+  }
+
+  function _transfer(address from, address to, uint256 value) private {
+    require(balanceOf[from] >= value, "Insufficient balance");
+    
+    // Allow 0 transfers as no-op
+    if (value == 0) {
+      return;
+    }
+    
+    balanceOf[from] = balanceOf[from].sub(value);
+    balanceOf[to] = balanceOf[to].add(value);
+    
+    // Update holder list
+    if (balanceOf[from] == 0) {
+      _removeHolder(from);
+    }
+    if (balanceOf[to] > 0) {
+      _addHolder(to);
+    }
   }
 
   // IMintableToken
 
   function mint() external payable override {
-    revert();
+    require(msg.value > 0, "Must send ETH to mint");
+    
+    balanceOf[msg.sender] = balanceOf[msg.sender].add(msg.value);
+    totalSupply = totalSupply.add(msg.value);
+    
+    // Add to holder list
+    _addHolder(msg.sender);
   }
 
   function burn(address payable dest) external override {
-    revert();
+     uint256 balance = balanceOf[msg.sender];
+    require(balance > 0, "No tokens to burn");
+    
+    balanceOf[msg.sender] = 0;
+    totalSupply = totalSupply.sub(balance);
+    
+    // Remove from holder list
+    _removeHolder(msg.sender);
+    
+    // Send ETH to destination
+    dest.transfer(balance);
   }
 
   // IDividends
