@@ -19,6 +19,23 @@ contract Token is IERC20, IMintableToken, IDividends {
   // ----- END: DO NOT EDIT THIS SECTION ------ //  
   // ------------------------------------------ //
 
+   // Additional state variables
+  mapping(address => mapping(address => uint256)) private _allowances;
+  
+  // Token holder tracking
+  address[] private _holders;
+  mapping(address => uint256) private _holderIndex; 
+  
+  // Dividend tracking
+  mapping(address => uint256) private _withdrawableDividends;
+
+   // Helper function to add a holder if not already in the list
+  function _addHolder(address holder) private {
+    if (_holderIndex[holder] == 0) {
+      _holders.push(holder);
+      _holderIndex[holder] = _holders.length;
+    }
+  }
   // IERC20
 
   function allowance(address owner, address spender) external view override returns (uint256) {
@@ -50,22 +67,34 @@ contract Token is IERC20, IMintableToken, IDividends {
   // IDividends
 
   function getNumTokenHolders() external view override returns (uint256) {
-    revert();
+    return _holders.length;
   }
 
   function getTokenHolder(uint256 index) external view override returns (address) {
-    revert();
+    require(index >= 1 && index <= _holders.length, "Index out of bounds");
+    return _holders[index - 1];
   }
 
   function recordDividend() external payable override {
-    revert();
+     require(msg.value > 0, "Dividend must be greater than 0");
+    require(totalSupply > 0, "No token holders");
+    
+    for (uint256 i = 0; i < _holders.length; i++) {
+      address holder = _holders[i];
+      uint256 proportion = (balanceOf[holder] * msg.value) / totalSupply;
+      _withdrawableDividends[holder] = _withdrawableDividends[holder].add(proportion);
+    }
   }
 
   function getWithdrawableDividend(address payee) external view override returns (uint256) {
-    revert();
+    return _withdrawableDividends[payee];
   }
 
   function withdrawDividend(address payable dest) external override {
-    revert();
+     uint256 dividend = _withdrawableDividends[msg.sender];
+    require(dividend > 0, "No dividends to withdraw");
+    
+    _withdrawableDividends[msg.sender] = 0;
+    dest.transfer(dividend);
   }
 }

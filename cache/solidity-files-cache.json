@@ -37,8 +37,8 @@
       ]
     },
     "/home/damboy/Codes/rwaAssetsTest/SolidityTest/contracts/Token.sol": {
-      "lastModificationDate": 1776874080068,
-      "contentHash": "6d988cdd510d1b0abdca5660e03bf3bf",
+      "lastModificationDate": 1776874815180,
+      "contentHash": "f39241ebfde0c0cf8a7f7c6d581e4cb2",
       "sourceName": "contracts/Token.sol",
       "solcConfig": {
         "version": "0.7.0",
